@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sparkforge — Build Smarter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root{
+    --ink:#0B2545;
+    --ink-2:#12366;
+    --line:#8ECAE6;
+    --line-dim: rgba(142,202,230,0.28);
+    --paper:#F5F7FA;
+    --amber:#FFB703;
+    --amber-dim:#C98A00;
+    --grid-size:36px;
+    --radius:2px;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html{scroll-behavior:smooth;}
+
+  body{
+    font-family:'Inter', sans-serif;
+    background:var(--ink);
+    color:var(--paper);
+    overflow-x:hidden;
+  }
+
+  a{color:inherit;text-decoration:none;}
+  ul{list-style:none;}
+
+  .mono{
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+  }
+
+  /* ---------- Blueprint grid background ---------- */
+  .blueprint-bg{
+    background-image:
+      linear-gradient(var(--line-dim) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-dim) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+    background-position: center top;
+  }
+
+  .crop-mark{
+    position:absolute;
+    width:22px;height:22px;
+    border-color: var(--line);
+    opacity:0.55;
+  }
+  .crop-mark.tl{top:14px;left:14px;border-top:1px solid var(--line);border-left:1px solid var(--line);}
+  .crop-mark.tr{top:14px;right:14px;border-top:1px solid var(--line);border-right:1px solid var(--line);}
+  .crop-mark.bl{bottom:14px;left:14px;border-bottom:1px solid var(--line);border-left:1px solid var(--line);}
+  .crop-mark.br{bottom:14px;right:14px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);}
+
+  /* ---------- Header ---------- */
+  header{
+    position:fixed;
+    top:0;left:0;right:0;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 18px 5%;
+    background: rgba(11,37,69,0.85);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--line-dim);
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:1.25rem;
+  }
+  .brand .mark{
+    width:30px;height:30px;
+    border:1.5px solid var(--amber);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+  }
+  .brand .mark::before, .brand .mark::after{
+    content:'';
+    position:absolute;
+    background:var(--amber);
+  }
+  .brand .mark::before{width:1.5px;height:14px;}
+  .brand .mark::after{width:14px;height:1.5px;}
+
+  nav ul{
+    display:flex;
+    align-items:center;
+    gap:2.2rem;
+  }
+
+  nav a.nav-link{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.82rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    position:relative;
+    padding:6px 2px;
+    transition:color 0.25s ease;
+  }
+  nav a.nav-link::after{
+    content:'';
+    position:absolute;
+    left:0;bottom:0;
+    width:0%;
+    height:1px;
+    background:var(--amber);
+    transition:width 0.25s ease;
+  }
+  nav a.nav-link:hover{color:var(--amber);}
+  nav a.nav-link:hover::after{width:100%;}
+
+  .has-dropdown{position:relative;}
+  .dropdown{
+    position:absolute;
+    top:calc(100% + 14px);
+    left:50%;
+    transform:translateX(-50%);
+    min-width:210px;
+    background:var(--ink-2);
+    border:1px solid var(--line-dim);
+    border-radius:var(--radius);
+    padding:8px 0;
+    opacity:0;
+    visibility:hidden;
+    transform:translateX(-50%) translateY(6px);
+    transition:all 0.22s ease;
+    box-shadow:0 12px 28px rgba(0,0,0,0.35);
+  }
+  .has-dropdown:hover .dropdown{
+    opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);
+  }
+  .dropdown li a{
+    display:block;
+    padding:10px 18px;
+    font-family:'Inter',sans-serif;
+    font-size:0.88rem;
+    text-transform:none;
+    letter-spacing:normal;
+    border-left:2px solid transparent;
+    transition:all 0.2s ease;
+  }
+  .dropdown li a:hover{
+    border-left:2px solid var(--amber);
+    background:rgba(255,183,3,0.07);
+    color:var(--amber);
+  }
+
+  .cta-small{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    padding:9px 18px;
+    border:1px solid var(--amber);
+    color:var(--amber);
+    border-radius:var(--radius);
+    transition:all 0.25s ease;
+  }
+  .cta-small:hover{background:var(--amber);color:var(--ink);}
+
+  .burger{
+    display:none;
+    flex-direction:column;
+    gap:5px;
+    cursor:pointer;
+    background:none;border:none;
+  }
+  .burger span{width:24px;height:2px;background:var(--paper);}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 140px 6% 100px;
+  }
+  .hero::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background: radial-gradient(ellipse 60% 50% at 50% 30%, rgba(142,202,230,0.14), transparent 70%);
+    pointer-events:none;
+  }
+
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    color:var(--line);
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    margin-bottom:22px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .eyebrow::before, .eyebrow::after{
+    content:'';
+    width:32px;height:1px;
+    background:var(--line-dim);
+  }
+
+  h1.headline{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:clamp(2.4rem, 6vw, 5.2rem);
+    line-height:1.05;
+    max-width:16ch;
+    margin-bottom:26px;
+    position:relative;
+  }
+  h1.headline .accent{color:var(--amber);position:relative;}
+
+  .dim-line{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin: 0 auto 30px;
+    color: var(--line);
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    opacity:0.75;
+  }
+  .dim-line .tick{width:1px;height:8px;background:var(--line);}
+  .dim-line .bar{width:90px;height:1px;background:var(--line);}
+
+  .tagline{
+    font-size:1.15rem;
+    color:rgba(245,247,250,0.78);
+    max-width:46ch;
+    margin-bottom:44px;
+    line-height:1.6;
+  }
+
+  .cta-primary{
+    display:inline-flex;
+    align-items:center;
+    gap:12px;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:500;
+    font-size:0.95rem;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:18px 34px;
+    background:var(--amber);
+    color:var(--ink);
+    border-radius:var(--radius);
+    position:relative;
+    transition:all 0.3s ease;
+    box-shadow: 0 0 0 0 rgba(255,183,3,0.4);
+  }
+  .cta-primary:hover{
+    transform:translateY(-3px);
+    box-shadow: 0 10px 30px rgba(255,183,3,0.28);
+    background:#ffc733;
+  }
+  .cta-primary i{transition:transform 0.3s ease;}
+  .cta-primary:hover i{transform:translateX(5px);}
+
+  .scroll-cue{
+    position:absolute;
+    bottom:36px;
+    left:50%;
+    transform:translateX(-50%);
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.68rem;
+    color:var(--line);
+    opacity:0.6;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+  }
+  .scroll-cue .stem{
+    width:1px;height:34px;
+    background:linear-gradient(var(--line), transparent);
+    animation:pulse-down 2s ease-in-out infinite;
+  }
+  @keyframes pulse-down{
+    0%,100%{opacity:0.3;}
+    50%{opacity:1;}
+  }
+
+  /* ---------- Section shared ---------- */
+  section{position:relative;padding:110px 6%;}
+  .section-head{
+    text-align:center;
+    max-width:640px;
+    margin: 0 auto 64px;
+  }
+  .section-head .eyebrow{justify-content:center;}
+  .section-head h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:clamp(1.8rem, 4vw, 2.6rem);
+    font-weight:600;
+    margin-bottom:16px;
+  }
+  .section-head p{color:rgba(245,247,250,0.68);line-height:1.65;}
+
+  /* ---------- Features ---------- */
+  .features{
+    background:var(--ink);
+  }
+  .feature-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:1px;
+    background:var(--line-dim);
+    border:1px solid var(--line-dim);
+    max-width:1200px;
+    margin:0 auto;
+  }
+  .feature-card{
+    background:var(--ink);
+    padding:42px 30px;
+    position:relative;
+    transition:background 0.3s ease;
+  }
+  .feature-card:hover{background:var(--ink-2);}
+  .feature-card .fig{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    color:var(--line);
+    opacity:0.55;
+    margin-bottom:28px;
+    letter-spacing:0.1em;
+  }
+  .feature-card .icon-wrap{
+    width:52px;height:52px;
+    border:1px solid var(--line-dim);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:22px;
+    transition:all 0.3s ease;
+  }
+  .feature-card:hover .icon-wrap{
+    border-color:var(--amber);
+    box-shadow:0 0 0 4px rgba(255,183,3,0.08);
+  }
+  .feature-card .icon-wrap i{
+    font-size:1.15rem;
+    color:var(--line);
+    transition:color 0.3s ease;
+  }
+  .feature-card:hover .icon-wrap i{color:var(--amber);}
+  .feature-card h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:1.15rem;
+    font-weight:600;
+    margin-bottom:12px;
+  }
+  .feature-card p{
+    font-size:0.92rem;
+    color:rgba(245,247,250,0.62);
+    line-height:1.6;
+  }
+
+  /* ---------- Services ---------- */
+  .services{
+    background:var(--ink-2);
+    border-top:1px solid var(--line-dim);
+    border-bottom:1px solid var(--line-dim);
+  }
+  .services-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:28px;
+    max-width:1100px;
+    margin:0 auto;
+  }
+  .service-item{
+    padding:30px;
+    border:1px dashed var(--line-dim);
+    border-radius:var(--radius);
+    transition:border-color 0.3s ease, transform 0.3s ease;
+  }
+  .service-item:hover{
+    border-color:var(--amber);
+    transform:translateY(-4px);
+  }
+  .service-item i{color:var(--amber);font-size:1.3rem;margin-bottom:14px;display:block;}
+  .service-item h4{font-family:'Space Grotesk',sans-serif;margin-bottom:8px;font-size:1.05rem;}
+  .service-item p{font-size:0.88rem;color:rgba(245,247,250,0.6);line-height:1.55;}
+
+  /* ---------- CTA band ---------- */
+  .cta-band{
+    background: var(--ink);
+    text-align:center;
+    padding:100px 6%;
+  }
+  .cta-band h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:clamp(1.8rem,4vw,2.8rem);
+    margin-bottom:18px;
+  }
+  .cta-band p{color:rgba(245,247,250,0.65);margin-bottom:38px;}
+
+  /* ---------- Footer ---------- */
+  footer{
+    position:relative;
+    background:#081b33;
+    padding:56px 6% 30px;
+    border-top:1px solid var(--line-dim);
+  }
+  .footer-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:40px;
+    max-width:1200px;
+    margin:0 auto 40px;
+  }
+  .footer-brand .brand{margin-bottom:14px;}
+  .footer-brand p{
+    font-size:0.88rem;
+    color:rgba(245,247,250,0.55);
+    max-width:34ch;
+    line-height:1.6;
+  }
+  .footer-contact p{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.82rem;
+    color:var(--line);
+    margin-bottom:8px;
+  }
+  .footer-bottom{
+    max-width:1200px;
+    margin:0 auto;
+    padding-top:26px;
+    border-top:1px solid var(--line-dim);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:14px;
+  }
+  .footer-bottom p{
+    font-size:0.8rem;
+    color:rgba(245,247,250,0.5);
+  }
+  .footer-links{
+    display:flex;
+    gap:22px;
+  }
+  .footer-links a{
+    font-size:0.8rem;
+    color:rgba(245,247,250,0.6);
+    transition:color 0.25s ease;
+    position:relative;
+  }
+  .footer-links a:hover{color:var(--amber);}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 980px){
+    .feature-grid{grid-template-columns:repeat(2,1fr);}
+    .services-grid{grid-template-columns:repeat(2,1fr);}
+  }
+
+  @media (max-width: 760px){
+    nav ul{
+      position:fixed;
+      top:64px;left:0;right:0;
+      flex-direction:column;
+      background:var(--ink);
+      align-items:flex-start;
+      padding:24px 6%;
+      gap:0;
+      border-bottom:1px solid var(--line-dim);
+      transform:translateY(-130%);
+      transition:transform 0.3s ease;
+    }
+    nav ul.open{transform:translateY(0);}
+    nav li{width:100%;padding:14px 0;border-bottom:1px solid var(--line-dim);}
+    .has-dropdown .dropdown{
+      position:static;
+      transform:none;
+      opacity:1;visibility:visible;
+      display:none;
+      width:100%;
+      margin-top:12px;
+      box-shadow:none;
+    }
+    .has-dropdown.open .dropdown{display:block;}
+    .cta-small{margin-top:10px;display:inline-block;}
+    .burger{display:flex;}
+    .feature-grid{grid-template-columns:1fr;}
+    .services-grid{grid-template-columns:1fr;}
+    .footer-top{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header>
+  <a href="#home" class="brand">
+    <span class="mark"></span>
+    Sparkforge
+  </a>
+
+  <button class="burger" id="burger" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+
+  <nav>
+    <ul id="navList">
+      <li><a class="nav-link" href="#home">Home</a></li>
+      <li><a class="nav-link" href="#features">Features</a></li>
+      <li class="has-dropdown" id="servicesDropdown">
+        <a class="nav-link" href="#services">Services <i class="fa-solid fa-chevron-down" style="font-size:0.65em;margin-left:4px;"></i></a>
+        <ul class="dropdown">
+          <li><a href="#services"><i class="fa-solid fa-code" style="margin-right:8px;color:var(--amber);"></i>Web Development</a></li>
+          <li><a href="#services"><i class="fa-solid fa-mobile-screen" style="margin-right:8px;color:var(--amber);"></i>App Development</a></li>
+          <li><a href="#services"><i class="fa-solid fa-cloud" style="margin-right:8px;color:var(--amber);"></i>Cloud Solutions</a></li>
+          <li><a href="#services"><i class="fa-solid fa-palette" style="margin-right:8px;color:var(--amber);"></i>UI/UX Design</a></li>
+        </ul>
+      </li>
+      <li><a class="nav-link" href="#contact">Contact</a></li>
+      <li><a class="cta-small" href="#contact">Get Started</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero blueprint-bg" id="home">
+  <span class="crop-mark tl"></span>
+  <span class="crop-mark tr"></span>
+  <span class="crop-mark bl"></span>
+  <span class="crop-mark br"></span>
+
+  <p class="eyebrow">Full Stack Build Studio</p>
+  <h1 class="headline">Build Smarter with <span class="accent">Sparkforge</span></h1>
+
+  <div class="dim-line">
+    <span class="tick"></span><span class="bar"></span>
+    <span>concept → craft → launch</span>
+    <span class="bar"></span><span class="tick"></span>
+  </div>
+
+  <p class="tagline">We design and engineer digital products from first sketch to shipped release — clean code, considered design, and infrastructure that scales with you.</p>
+
+  <a href="#contact" class="cta-primary">Apply Now <i class="fa-solid fa-arrow-right"></i></a>
+
+  <div class="scroll-cue">
+    <span>SCROLL</span>
+    <span class="stem"></span>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section class="features" id="features">
+  <div class="section-head">
+    <p class="eyebrow">Why Sparkforge</p>
+    <h2>Engineered for the long run</h2>
+    <p>Every build is measured against the same four checkpoints before it ships.</p>
+  </div>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <p class="fig">FIG. 01 — SPEED</p>
+      <div class="icon-wrap"><i class="fa-solid fa-bolt"></i></div>
+      <h3>Fast</h3>
+      <p>Optimized builds and lean assets keep load times low and interactions instant.</p>
+    </div>
+    <div class="feature-card">
+      <p class="fig">FIG. 02 — LAYOUT</p>
+      <div class="icon-wrap"><i class="fa-solid fa-mobile-screen-button"></i></div>
+      <h3>Responsive</h3>
+      <p>Every screen from a watch to a widescreen monitor gets a layout tuned for it.</p>
+    </div>
+    <div class="feature-card">
+      <p class="fig">FIG. 03 — GROWTH</p>
+      <div class="icon-wrap"><i class="fa-solid fa-layer-group"></i></div>
+      <h3>Scalable</h3>
+      <p>Architecture that holds up whether you have ten users or ten million.</p>
+    </div>
+    <div class="feature-card">
+      <p class="fig">FIG. 04 — TRUST</p>
+      <div class="icon-wrap"><i class="fa-solid fa-shield-halved"></i></div>
+      <h3>Secure</h3>
+      <p>Security reviewed at every layer, from auth flows to data at rest.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SERVICES ============ -->
+<section class="services" id="services">
+  <div class="section-head">
+    <p class="eyebrow">What We Offer</p>
+    <h2>Services, drafted to spec</h2>
+    <p>Pick a discipline, or combine them — each engagement starts with a plan before a single line of code.</p>
+  </div>
+
+  <div class="services-grid">
+    <div class="service-item">
+      <i class="fa-solid fa-code"></i>
+      <h4>Web Development</h4>
+      <p>Marketing sites, dashboards, and full web apps built on modern stacks.</p>
+    </div>
+    <div class="service-item">
+      <i class="fa-solid fa-mobile-screen"></i>
+      <h4>App Development</h4>
+      <p>Native-feel iOS and Android experiences from a single codebase.</p>
+    </div>
+    <div class="service-item">
+      <i class="fa-solid fa-cloud"></i>
+      <h4>Cloud Solutions</h4>
+      <p>Infrastructure, CI/CD, and hosting that scales quietly in the background.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA BAND ============ -->
+<section class="cta-band" id="apply">
+  <p class="eyebrow" style="justify-content:center;">Ready When You Are</p>
+  <h2>Let's draft your next build.</h2>
+  <p>Tell us what you're making — we'll sketch the plan within 48 hours.</p>
+  <a href="#contact" class="cta-primary">Apply Now <i class="fa-solid fa-arrow-right"></i></a>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer id="contact">
+  <div class="footer-top">
+    <div class="footer-brand">
+      <a href="#home" class="brand"><span class="mark"></span>Sparkforge</a>
+      <p>Digital products, built to spec — from first sketch to shipped release.</p>
+    </div>
+    <div class="footer-contact">
+      <p><i class="fa-solid fa-globe" style="margin-right:8px;"></i>www.sparkforge.com</p>
+      <p><i class="fa-solid fa-envelope" style="margin-right:8px;"></i>hr@sparkforge.com</p>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>&copy; 2025 Sparkforge. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const burger = document.getElementById('burger');
+  const navList = document.getElementById('navList');
+  const servicesDropdown = document.getElementById('servicesDropdown');
+
+  burger.addEventListener('click', () => {
+    navList.classList.toggle('open');
+  });
+
+  servicesDropdown.querySelector('.nav-link').addEventListener('click', (e) => {
+    if(window.innerWidth <= 760){
+      e.preventDefault();
+      servicesDropdown.classList.toggle('open');
+    }
+  });
+
+  document.querySelectorAll('nav a:not(.has-dropdown > .nav-link)').forEach(link => {
+    link.addEventListener('click', () => {
+      if(window.innerWidth <= 760){
+        navList.classList.remove('open');
+        servicesDropdown.classList.remove('open');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
